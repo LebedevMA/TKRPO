@@ -16,7 +16,12 @@ namespace dostavka
     public partial class Form2 : Form
     {
         String ConnectionString;
-        
+
+        int CityTariff = 100;
+        int CountryTariff = 200;
+
+        float OurPart = 0.5f;
+
         public Functionality.Order TheOrder;
 
         public Form2()
@@ -165,6 +170,7 @@ namespace dostavka
                 comboBox_Client.SelectedItem = TheClient;
                 TheOrder.PK_Client = TheClient.PK_Client;
                 label_Discount.Text = TheClient.Discount.ToString() + "%";
+                SumCount();
             }
         }
 
@@ -194,6 +200,7 @@ namespace dostavka
             Functionality.Client TheClient = ((Functionality.Client)(comboBox_Client.SelectedItem));
             TheOrder.PK_Client = TheClient.PK_Client;
             label_Discount.Text = TheClient.Discount.ToString() + "%";
+            SumCount();
         }
 
         private void comboBox_Driver_SelectedIndexChanged(object sender, EventArgs e)
@@ -220,6 +227,7 @@ namespace dostavka
         {
             if (checkBox_Countryside.Checked) TheOrder.Countryside = 1;
             else TheOrder.Countryside = 0;
+            SumCount();
         }
 
         private void textBox_Comment_TextChanged(object sender, EventArgs e)
@@ -250,6 +258,24 @@ namespace dostavka
                 TheOrder.Lines.Remove((Functionality.OrderLine)(Rows2Del[i].Cells["Column_Tag"].Value));
                 dataGridView1.Rows.Remove(Rows2Del[i]);
             }
+        }
+        
+        void SumCount() {
+            OracleConnection conn = new OracleConnection(ConnectionString);
+            conn.Open();
+            int Discount = 0;
+            Functionality.Client TheClient = Functionality.Client.FromPK(conn, TheOrder.PK_Client);
+            if (TheClient != null) {
+                Discount = TheClient.Discount;
+            }
+            conn.Close();
+            TheOrder.Sum = Functionality.OrdersController.CountSum(TheOrder,CityTariff,CountryTariff)
+                * (float)(1 - 0.01 * Discount);
+            TheOrder.Part = Functionality.OrdersController.CountPart(TheOrder.Sum, OurPart);
+            
+
+            label_Sum.Text = TheOrder.Sum.ToString();
+            label_Part.Text = TheOrder.Part.ToString();
         }
 
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -352,6 +378,7 @@ namespace dostavka
                     break;
             }
             conn.Close();
+            SumCount();
         }
     }
 }

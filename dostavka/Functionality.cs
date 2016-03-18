@@ -26,7 +26,8 @@ namespace dostavka
 
             public int PK_Driver;
             public int PK_Client;
-            
+
+
             public Order()
             {
                 PK_Order = -1;
@@ -291,15 +292,23 @@ namespace dostavka
 
             public static float CountCost(OracleConnection conn, OrderLine TheLine)
             {
-                return 0;
+                return TheLine.Amount * Dish.FromPK(conn, TheLine.PK_Dish).Price;
             }
             public static float CountSum(Order TheOrder, float CityTariff, float CountryTariff)
             {
-                return 0;
+                float Sum = 0;
+                for (int i = 0; i < TheOrder.Lines.Count; i++)
+                {
+                    Sum += TheOrder.Lines[i].Cost;
+                }
+                if (TheOrder.Countryside != 0) Sum += CountryTariff;
+                else Sum += CityTariff;
+
+                return Sum;
             }
             public static float CountPart(float Sum, float Part)
             {
-                return 0;
+                return Sum * Part;
             }
         }
         public class Dish

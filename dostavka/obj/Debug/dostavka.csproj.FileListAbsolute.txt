@@ -1,0 +1,12 @@
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\bin\Debug\dostavka.exe.config
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\bin\Debug\dostavka.exe
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\bin\Debug\dostavka.pdb
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\bin\Debug\Oracle.ManagedDataAccess.dll
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.csprojResolveAssemblyReference.cache
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.Form1.resources
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.Form2.resources
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.Form3.resources
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.Properties.Resources.resources
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.csproj.GenerateResource.Cache
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.exe
+C:\Users\Pikadordor\Desktop\часть3_Юля_расчет_финансов\dostavka\obj\Debug\dostavka.pdb
