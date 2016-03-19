@@ -48,6 +48,69 @@ namespace dostavka
             this.DialogResult = DialogResult.Cancel;
         }
 
+        void SetStatus(int Status) {
+            TheOrder.Status = Status;
+            switch (TheOrder.Status)
+            {
+                case 0:
+                    label_Status.Text = "Ожидание";
+                    button_Status1.Visible = true;
+                    button_Status2.Visible = true;
+                    button_Status3.Visible = false;
+                    break;
+                case 1:
+                    label_Status.Text = "Выполнение";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = true;
+                    break;
+                case 2:
+                    label_Status.Text = "Отменен";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = false;
+                    break;
+                case 3:
+                    label_Status.Text = "Завершен";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = false;
+                    break;
+            }
+            if (TheOrder.LinesChangeAllowed() == false)
+            {
+                dataGridView1.Enabled = false;
+                button_AddLine.Enabled = false;
+                button_RemoveLines.Enabled = false;
+            }
+            if (TheOrder.AddressChangeAllowed() == false)
+            {
+                textBox_Address.Enabled = false;
+                checkBox_Countryside.Enabled = false;
+            }
+            if (TheOrder.DateTimeChangeAllowed() == false)
+            {
+                dateTimePicker2.Enabled = false;
+            }
+            if (TheOrder.DriverChangeAllowed() == false)
+            {
+                comboBox_Driver.Enabled = false;
+            }
+            if (TheOrder.ClientChangeAllowed() == false)
+            {
+                comboBox_Client.Enabled = false;
+                button1.Enabled = false;
+            }
+            if (TheOrder.ClientChangeAllowed() == false) {
+                comboBox_Client.Enabled = false;
+                button1.Enabled = false;
+            }
+            if (TheOrder.DriverMoneyChangeAllowed() == false)
+            {
+                textBox_DriverMoney.Enabled = false;
+            }
+        }
+
         void LoadClients() {
             OracleConnection conn = new OracleConnection(ConnectionString);
             conn.Open();
@@ -83,13 +146,15 @@ namespace dostavka
         }
 
         void LoadDishList(OracleConnection conn, int row, int PK_Cafe) {
+            bool IncludeDisabled = false;
+            if (!TheOrder.LinesChangeAllowed()) IncludeDisabled = true;
             DataGridViewComboBoxCell cbc = (DataGridViewComboBoxCell)dataGridView1.Rows[row].Cells["Column_Dish"];
             cbc.Value = null;
             cbc.Items.Clear();
             if (PK_Cafe <= 0) return;
             List<Functionality.Dish> Dishes;
-            if (PK_Cafe > 0) Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe);
-            else Dishes = Functionality.DishController.GetDishList(conn);
+            if (PK_Cafe > 0) Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
+            else Dishes = Functionality.DishController.GetDishList(conn, IncludeDisabled);
             for (int j = 0; j < Dishes.Count; j++)
             {
                 cbc.Items.Add(Dishes[j].Name);
@@ -110,6 +175,8 @@ namespace dostavka
             checkBox_Countryside.Checked = (TheOrder.Countryside != 0);
 
             textBox_Comment.Text = TheOrder.Comment;
+
+            SetStatus(TheOrder.Status);
 
             OracleConnection conn = new OracleConnection(ConnectionString);
             conn.Open();
@@ -181,14 +248,31 @@ namespace dostavka
 
         private void button_Status1_Click(object sender, EventArgs e)
         {
+            if (TheOrder.PK_Client <= 0) {
+                MessageBox.Show("Вы не выбрали клиента.");
+                return;
+            }
+            if (TheOrder.PK_Driver <= 0)
+            {
+                MessageBox.Show("Вы не выбрали водителя.");
+                return;
+            }
+            SetStatus(1);
         }
 
         private void button_Status2_Click(object sender, EventArgs e)
         {
+            SetStatus(2);
         }
 
         private void button_Status3_Click(object sender, EventArgs e)
         {
+            if (TheOrder.DriverMoney < TheOrder.Part)
+            {
+                MessageBox.Show("Деньги от водителя не получены.");
+                return;
+            }
+            SetStatus(3);
         }
 
         private void dataGridView1_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)

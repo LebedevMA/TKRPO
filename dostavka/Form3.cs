@@ -42,6 +42,15 @@ namespace dostavka
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (TheClient.Name.Length == 0) {
+                MessageBox.Show("Вы не ввели ФИО клиента.");
+                return;
+            }
+            if (maskedTextBox_Phone.MaskCompleted == false)
+            {
+                MessageBox.Show("Вы не ввели телефон клиента.");
+                return;
+            }
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
