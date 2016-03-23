@@ -32,6 +32,12 @@
             this.label2 = new System.Windows.Forms.Label();
             this.textBox_Comment = new System.Windows.Forms.TextBox();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.Column_Tag = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column_Cafe = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.Column_Dish = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.Column_Price = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column_Amount = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column_Cost = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.label3 = new System.Windows.Forms.Label();
             this.textBox_Address = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -62,12 +68,12 @@
             this.label_Sum = new System.Windows.Forms.Label();
             this.button_AddLine = new System.Windows.Forms.Button();
             this.button_RemoveLines = new System.Windows.Forms.Button();
-            this.Column_Tag = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column_Cafe = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.Column_Dish = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.Column_Price = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column_Amount = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column_Cost = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.label14 = new System.Windows.Forms.Label();
+            this.labelClientMoney = new System.Windows.Forms.Label();
+            this.labelDostavka = new System.Windows.Forms.Label();
+            this.label16 = new System.Windows.Forms.Label();
+            this.dateTimePickerReg = new System.Windows.Forms.DateTimePicker();
+            this.label15 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -124,6 +130,41 @@
             this.dataGridView1.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellEndEdit);
             this.dataGridView1.RowsAdded += new System.Windows.Forms.DataGridViewRowsAddedEventHandler(this.dataGridView1_RowsAdded);
             // 
+            // Column_Tag
+            // 
+            this.Column_Tag.HeaderText = "Tag";
+            this.Column_Tag.Name = "Column_Tag";
+            this.Column_Tag.Visible = false;
+            // 
+            // Column_Cafe
+            // 
+            this.Column_Cafe.HeaderText = "Кафе";
+            this.Column_Cafe.Name = "Column_Cafe";
+            // 
+            // Column_Dish
+            // 
+            this.Column_Dish.HeaderText = "Название блюда";
+            this.Column_Dish.Name = "Column_Dish";
+            // 
+            // Column_Price
+            // 
+            this.Column_Price.HeaderText = "Цена за ед.";
+            this.Column_Price.Name = "Column_Price";
+            this.Column_Price.ReadOnly = true;
+            // 
+            // Column_Amount
+            // 
+            this.Column_Amount.HeaderText = "Кол-во";
+            this.Column_Amount.Name = "Column_Amount";
+            this.Column_Amount.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.Column_Amount.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // Column_Cost
+            // 
+            this.Column_Cost.HeaderText = "Стоимость";
+            this.Column_Cost.Name = "Column_Cost";
+            this.Column_Cost.ReadOnly = true;
+            // 
             // label3
             // 
             this.label3.AutoSize = true;
@@ -177,11 +218,11 @@
             // 
             this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(37, 427);
+            this.label6.Location = new System.Drawing.Point(30, 427);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(36, 13);
+            this.label6.Size = new System.Drawing.Size(98, 13);
             this.label6.TabIndex = 10;
-            this.label6.Text = "Цена:";
+            this.label6.Text = "Деньги для кафе:";
             // 
             // label7
             // 
@@ -402,7 +443,7 @@
             // 
             this.label_Sum.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label_Sum.AutoSize = true;
-            this.label_Sum.Location = new System.Drawing.Point(80, 427);
+            this.label_Sum.Location = new System.Drawing.Point(135, 427);
             this.label_Sum.Name = "label_Sum";
             this.label_Sum.Size = new System.Drawing.Size(28, 13);
             this.label_Sum.TabIndex = 40;
@@ -430,46 +471,74 @@
             this.button_RemoveLines.UseVisualStyleBackColor = true;
             this.button_RemoveLines.Click += new System.EventHandler(this.button_RemoveLines_Click);
             // 
-            // Column_Tag
+            // label14
             // 
-            this.Column_Tag.HeaderText = "Tag";
-            this.Column_Tag.Name = "Column_Tag";
-            this.Column_Tag.Visible = false;
+            this.label14.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label14.AutoSize = true;
+            this.label14.Location = new System.Drawing.Point(28, 463);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(101, 13);
+            this.label14.TabIndex = 43;
+            this.label14.Text = "Деньги с клиента:";
             // 
-            // Column_Cafe
+            // labelClientMoney
             // 
-            this.Column_Cafe.HeaderText = "Кафе";
-            this.Column_Cafe.Name = "Column_Cafe";
+            this.labelClientMoney.AutoSize = true;
+            this.labelClientMoney.Location = new System.Drawing.Point(136, 463);
+            this.labelClientMoney.Name = "labelClientMoney";
+            this.labelClientMoney.Size = new System.Drawing.Size(28, 13);
+            this.labelClientMoney.TabIndex = 44;
+            this.labelClientMoney.Text = "0.00";
             // 
-            // Column_Dish
+            // labelDostavka
             // 
-            this.Column_Dish.HeaderText = "Название блюда";
-            this.Column_Dish.Name = "Column_Dish";
+            this.labelDostavka.AutoSize = true;
+            this.labelDostavka.Location = new System.Drawing.Point(136, 444);
+            this.labelDostavka.Name = "labelDostavka";
+            this.labelDostavka.Size = new System.Drawing.Size(28, 13);
+            this.labelDostavka.TabIndex = 46;
+            this.labelDostavka.Text = "0.00";
             // 
-            // Column_Price
+            // label16
             // 
-            this.Column_Price.HeaderText = "Цена за ед.";
-            this.Column_Price.Name = "Column_Price";
-            this.Column_Price.ReadOnly = true;
+            this.label16.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label16.AutoSize = true;
+            this.label16.Location = new System.Drawing.Point(28, 444);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(60, 13);
+            this.label16.TabIndex = 45;
+            this.label16.Text = "Доставка:";
             // 
-            // Column_Amount
+            // dateTimePickerReg
             // 
-            this.Column_Amount.HeaderText = "Кол-во";
-            this.Column_Amount.Name = "Column_Amount";
-            this.Column_Amount.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.Column_Amount.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.dateTimePickerReg.CustomFormat = "dd/MM/yyyy HH:mm";
+            this.dateTimePickerReg.Enabled = false;
+            this.dateTimePickerReg.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dateTimePickerReg.Location = new System.Drawing.Point(168, 58);
+            this.dateTimePickerReg.Name = "dateTimePickerReg";
+            this.dateTimePickerReg.Size = new System.Drawing.Size(233, 20);
+            this.dateTimePickerReg.TabIndex = 48;
             // 
-            // Column_Cost
+            // label15
             // 
-            this.Column_Cost.HeaderText = "Стоимость";
-            this.Column_Cost.Name = "Column_Cost";
-            this.Column_Cost.ReadOnly = true;
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(32, 62);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(82, 13);
+            this.label15.TabIndex = 47;
+            this.label15.Text = "Заказ принят: ";
             // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(702, 617);
+            this.Controls.Add(this.dateTimePickerReg);
+            this.Controls.Add(this.label15);
+            this.Controls.Add(this.labelDostavka);
+            this.Controls.Add(this.label16);
+            this.Controls.Add(this.labelClientMoney);
+            this.Controls.Add(this.label14);
             this.Controls.Add(this.button_RemoveLines);
             this.Controls.Add(this.button_AddLine);
             this.Controls.Add(this.label_Sum);
@@ -555,5 +624,11 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Column_Price;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column_Amount;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column_Cost;
+        private System.Windows.Forms.Label label14;
+        private System.Windows.Forms.Label labelClientMoney;
+        private System.Windows.Forms.Label labelDostavka;
+        private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.DateTimePicker dateTimePickerReg;
+        private System.Windows.Forms.Label label15;
     }
 }

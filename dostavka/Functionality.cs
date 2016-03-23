@@ -14,12 +14,12 @@ namespace dostavka
         {
             public int PK_Order;
             public DateTime DateTime;
+            public DateTime RegDateTime;
             public float Sum;
             public float Part;
             public float DriverMoney;
             public int Status; // 0 - ожидание, 1 - выполнение, 2 - отменен, 3 - завершен
             public String Comment;
-            //public Destination Destination;
             public String Address;
             public int Countryside;
 
@@ -39,7 +39,6 @@ namespace dostavka
                 Status = 0;
                 Comment = "";
                 Lines = new List<OrderLine>();
-                // Destination = new Destination();
                 Address = "";
                 Countryside = 0;
                 PK_Driver = -1;
@@ -47,7 +46,7 @@ namespace dostavka
             }
             public static Order FromPK(OracleConnection conn, int PK, bool GetLines)
             {
-                String cmdQuery = "select \"PK_Order\", \"DateTime\", \"Sum\", \"Part\", \"DriverMoney\", \"Comment\", \"PK_Driver\", \"PK_Client\", \"PK_OrderStatus\", \"Address\", \"Countryside\" from \"Order\" where \"PK_Order\" = " + PK;
+                String cmdQuery = "select \"PK_Order\", \"DateTime\", \"Sum\", \"Part\", \"DriverMoney\", \"Comment\", \"PK_Driver\", \"PK_Client\", \"PK_OrderStatus\", \"Address\", \"Countryside\", \"RegDateTime\" from \"Order\" where \"PK_Order\" = " + PK;
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -70,6 +69,7 @@ namespace dostavka
 
                     if (!reader.IsDBNull(9)) TheOrder.Address = reader.GetString(9);
                     if (!reader.IsDBNull(10)) TheOrder.Countryside = reader.GetInt32(10);
+                    if (!reader.IsDBNull(11)) TheOrder.RegDateTime = reader.GetDateTime(11);
 
 
                     if (GetLines)
@@ -110,12 +110,12 @@ namespace dostavka
             }
             public bool DateTimeChangeAllowed()
             {
-                if (Status == 0) return true;
+                if (Status == 0 || Status == 1) return true;
                 return false;
             }
             public bool DriverChangeAllowed()
             {
-                if (Status == 0) return true;
+                if (Status == 0 || Status == 1) return true;
                 return false;
             }
             public bool ClientChangeAllowed() {
@@ -124,6 +124,7 @@ namespace dostavka
             }
             public bool DriverMoneyChangeAllowed()
             {
+                if (Status == 0) return false;
                 if (Status == 2) return false;
                 if (Status == 3) return false;
                 return true;
@@ -204,10 +205,11 @@ namespace dostavka
                 int PK = SEQreader.GetInt32(0);
                 TheOrder.PK_Order = PK;
 
-                String cmdQuery = "insert into \"Order\" (\"PK_Order\", \"PK_OrderStatus\", \"DateTime\", \"Sum\", \"Part\", \"PK_Driver\", \"PK_Client\", \"Address\", \"Countryside\", \"Comment\", \"PK_Dispatcher\")"
+                String cmdQuery = "insert into \"Order\" (\"PK_Order\", \"PK_OrderStatus\", \"DateTime\", \"RegDateTime\", \"Sum\", \"Part\", \"PK_Driver\", \"PK_Client\", \"Address\", \"Countryside\", \"Comment\", \"PK_Dispatcher\")"
                          + " values ("+ PK +","
                          + TheOrder.Status + ","
                          + "to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
+                         + "to_date('" + (TheOrder.RegDateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
                          + "'" + TheOrder.Sum + "',"
                          + "'" + TheOrder.Part + "',";
                 if (TheOrder.PK_Driver > 0) cmdQuery += TheOrder.PK_Driver + ",";
@@ -237,6 +239,7 @@ namespace dostavka
                 String cmdQuery = "update \"Order\" set ";
                 cmdQuery += "\"PK_OrderStatus\" = " + TheOrder.Status + ",";
                 if (TheOrder.DateTimeChangeAllowed()) cmdQuery += "\"DateTime\" = to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),";
+                //cmdQuery += "\"RegDateTime\" = to_date('" + (TheOrder.RegDateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),";
                 cmdQuery += "\"Sum\" = '" + TheOrder.Sum + "',";
                 cmdQuery += "\"Part\" = '" + TheOrder.Part + "',";
                 if (TheOrder.DriverChangeAllowed())
@@ -314,14 +317,12 @@ namespace dostavka
                 {
                     Sum += TheOrder.Lines[i].Cost;
                 }
-                if (TheOrder.Countryside != 0) Sum += CountryTariff;
-                else Sum += CityTariff;
 
                 return Sum;
             }
             public static float CountPart(float Sum, float Part)
             {
-                return Sum * Part;
+                return (float)((int)(Sum * Part + 0.5f));
             }
         }
         public class Dish
@@ -413,6 +414,8 @@ namespace dostavka
             }
             public static List<Dish> GetDishList(OracleConnection conn, int PK_Cafe, bool IncludeDisabled)
             {
+                if (PK_Cafe <= 0) return GetDishList(conn, IncludeDisabled);
+
                 String cmdQuery = "select \"PK_Dish\" from \"Dish\" where \"PK_Cafe\" = "+PK_Cafe;
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);

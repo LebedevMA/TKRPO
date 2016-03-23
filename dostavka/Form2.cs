@@ -20,7 +20,7 @@ namespace dostavka
         int CityTariff = 100;
         int CountryTariff = 200;
 
-        float OurPart = 0.5f;
+        float OurPart = 0.05f;
 
         public Functionality.Order TheOrder;
 
@@ -151,10 +151,9 @@ namespace dostavka
             DataGridViewComboBoxCell cbc = (DataGridViewComboBoxCell)dataGridView1.Rows[row].Cells["Column_Dish"];
             cbc.Value = null;
             cbc.Items.Clear();
-            if (PK_Cafe <= 0) return;
+            //if (PK_Cafe <= 0) return;
             List<Functionality.Dish> Dishes;
-            if (PK_Cafe > 0) Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
-            else Dishes = Functionality.DishController.GetDishList(conn, IncludeDisabled);
+            Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
             for (int j = 0; j < Dishes.Count; j++)
             {
                 cbc.Items.Add(Dishes[j].Name);
@@ -163,7 +162,14 @@ namespace dostavka
 
         private void Form2_Load(object sender, EventArgs e)
         {
-            if (TheOrder.PK_Order > 0) label_PK.Text = TheOrder.PK_Order.ToString();
+            if (TheOrder.PK_Order > 0)
+            {
+                label_PK.Text = TheOrder.PK_Order.ToString();
+                dateTimePickerReg.Value = TheOrder.RegDateTime;
+            }
+            else {
+                TheOrder.RegDateTime = dateTimePickerReg.Value;
+            }
             
             dateTimePicker2.Value = TheOrder.DateTime;
 
@@ -277,6 +283,10 @@ namespace dostavka
 
         private void dataGridView1_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
         {
+            OracleConnection conn = new OracleConnection(ConnectionString);
+            conn.Open();
+            LoadDishList(conn, e.RowIndex, -1);
+            conn.Close();
         }
 
         private void comboBox_Client_SelectedIndexChanged(object sender, EventArgs e)
@@ -360,6 +370,14 @@ namespace dostavka
 
             label_Sum.Text = TheOrder.Sum.ToString();
             label_Part.Text = TheOrder.Part.ToString();
+
+            float S = TheOrder.Sum + TheOrder.Part;
+            if (TheOrder.Countryside != 0) S += CountryTariff;
+            else S += CityTariff;
+            if (TheOrder.Countryside != 0) labelDostavka.Text = CountryTariff.ToString();
+            else labelDostavka.Text = CityTariff.ToString();
+
+            labelClientMoney.Text = S.ToString();
         }
 
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -398,9 +416,24 @@ namespace dostavka
                 case 2:
                     try
                     {
-                        TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
-                        TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
-                            TheCafe.PK_Cafe);
+                        TheCafe = null;
+                        try
+                        {
+                            TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
+                        }
+                        catch (System.Exception ee) { }
+                        
+                        if (TheCafe != null)
+                        {
+                            TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
+       TheCafe.PK_Cafe);
+                        }
+                        else {
+                            TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
+       -1);
+                            TheCafe = Functionality.Cafe.FromPK(conn, TheDish.PK_Cafe);
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value = TheCafe.Name;
+                        }
                         TheLine.PK_Dish = TheDish.PK_Dish;
 
                         try
@@ -434,10 +467,15 @@ namespace dostavka
                     try
                     {
                         TheLine.Amount = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
-
+                        if (TheLine.Amount < 0)
+                        {
+                            TheLine.Amount *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value = TheLine.Amount.ToString();
+                        }
                         try
                         {
                             TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Price"].Value) * Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
+                            if (TheLine.Cost < 0) TheLine.Cost *= -1;
                             dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
                         }
                         catch (System.Exception ee)
@@ -454,6 +492,11 @@ namespace dostavka
                     try
                     {
                         TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value));
+                        if (TheLine.Cost < 0)
+                        {
+                            TheLine.Cost *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
+                        }
                     }
                     catch (System.Exception ee)
                     {
