@@ -131,9 +131,57 @@ namespace dostavka
 
         private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            int PK_Order = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["Column_PK_Order"].Value);
+            try
+            {
+                int PK_Order = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["Column_PK_Order"].Value);
 
-            OrderEditOpen(PK_Order);
+                OrderEditOpen(PK_Order);
+            }
+            catch (System.Exception ee) {
+            }
+        }
+
+        private void DriversToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            drivers4 DriversForm = new drivers4();
+            DriversForm.ShowDialog();
+            ShowOrders();
+        }
+
+        private void ClientsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            klients KlientsForm = new klients();
+            KlientsForm.ShowDialog();
+            ShowOrders();
+        }
+
+        private void CafesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            kafe CafesForm = new kafe();
+            CafesForm.ShowDialog();
+            ShowOrders();
+        }
+
+        private void StatisticsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Stat StatisticsForm = new Stat();
+            StatisticsForm.ShowDialog();
+            ShowOrders();
+        }
+
+        private void DispatcherLogoutToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            OracleConnection conn = new OracleConnection(ConnectionString);
+            conn.Open();
+            Functionality.DispatcherController.LogOut(conn);
+            conn.Close();
+            this.Close();
+        }
+
+        private void DispatcherProfileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DispatcherProfileForm ProfileForm = new DispatcherProfileForm();
+            ProfileForm.ShowDialog();
         }
     }
 }

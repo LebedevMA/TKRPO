@@ -14,11 +14,13 @@ namespace dostavka
         {
             public int PK_Order;
             public DateTime DateTime;
+            public DateTime RegDateTime;
             public float Sum;
             public float Part;
             public float DriverMoney;
             public int Status; // 0 - ожидание, 1 - выполнение, 2 - отменен, 3 - завершен
             public String Comment;
+            //public Destination Destination;
             public String Address;
             public int Countryside;
 
@@ -38,6 +40,7 @@ namespace dostavka
                 Status = 0;
                 Comment = "";
                 Lines = new List<OrderLine>();
+                // Destination = new Destination();
                 Address = "";
                 Countryside = 0;
                 PK_Driver = -1;
@@ -45,7 +48,7 @@ namespace dostavka
             }
             public static Order FromPK(OracleConnection conn, int PK, bool GetLines)
             {
-                String cmdQuery = "select \"PK_Order\", \"DateTime\", \"Sum\", \"Part\", \"DriverMoney\", \"Comment\", \"PK_Driver\", \"PK_Client\", \"PK_OrderStatus\", \"Address\", \"Countryside\" from \"Order\" where \"PK_Order\" = " + PK;
+                String cmdQuery = "select \"PK_Order\", \"DateTime\", \"Sum\", \"Part\", \"DriverMoney\", \"Comment\", \"PK_Driver\", \"PK_Client\", \"PK_OrderStatus\", \"Address\", \"Countryside\", \"RegDateTime\" from \"Order\" where \"PK_Order\" = " + PK;
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -68,6 +71,7 @@ namespace dostavka
 
                     if (!reader.IsDBNull(9)) TheOrder.Address = reader.GetString(9);
                     if (!reader.IsDBNull(10)) TheOrder.Countryside = reader.GetInt32(10);
+                    if (!reader.IsDBNull(11)) TheOrder.RegDateTime = reader.GetDateTime(11);
 
 
                     if (GetLines)
@@ -93,30 +97,37 @@ namespace dostavka
 
             public bool LinesChangeAllowed()
             {
-                return true;
+                if (Status == 0) return true;
+                return false;
             }
             public bool CafeChangeAllowed()
             {
-                return true;
+                if (Status == 0) return true;
+                return false;
             }
             public bool AddressChangeAllowed()
             {
-                return true;
+                if (Status < 2) return true;
+                return false;
             }
             public bool DateTimeChangeAllowed()
             {
-                return true;
+                if (Status < 2) return true;
+                return false;
             }
             public bool DriverChangeAllowed()
             {
-                return true;
+                if (Status < 2) return true;
+                return false;
             }
             public bool ClientChangeAllowed() {
-                return true;
+                if (Status == 0) return true;
+                return false;
             }
             public bool DriverMoneyChangeAllowed()
             {
-                return true;
+                if (Status == 1) return true;
+                return false;
             }
         }
         public class OrderLine
@@ -124,6 +135,7 @@ namespace dostavka
             public int PK_OrderLine;
             public float Amount;
             public float Cost;
+            //public Dish Dish;
             public int PK_Dish;
             public Order Order;
 
@@ -166,8 +178,7 @@ namespace dostavka
             public static List<Order> GetOrdersList(OracleConnection conn, bool GetLines, int Status)
             {
                 String cmdQuery = "select \"PK_Order\", \"DateTime\", \"Sum\", \"Part\", \"Comment\", \"PK_Driver\", \"PK_Client\", \"PK_OrderStatus\" from \"Order\"";
-                if (Status >= 0) cmdQuery += " where \"PK_OrderStatus\" = "+Status; 
-
+                if (Status >= 0) cmdQuery += " where \"PK_OrderStatus\" = "+Status;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
                 cmd.CommandType = CommandType.Text;
@@ -178,6 +189,8 @@ namespace dostavka
                 while (reader.Read())
                 {
                     int PK_Order = reader.GetInt32(0);
+                    Order TheOrder = Order.FromPK(conn, PK_Order, true);
+                    if (DispatcherController.AccessAllowed(conn, TheOrder) == false) continue;
                     Orders.Add(Order.FromPK(conn, PK_Order, true));
                 }
                 return Orders;
@@ -193,19 +206,23 @@ namespace dostavka
                 int PK = SEQreader.GetInt32(0);
                 TheOrder.PK_Order = PK;
 
-                String cmdQuery = "insert into \"Order\" (\"PK_Order\", \"PK_OrderStatus\", \"DateTime\", \"Sum\", \"Part\", \"PK_Driver\", \"PK_Client\", \"Address\", \"Countryside\", \"Comment\")"
-                         + " values ("+ PK +","
+                String cmdQuery = "insert into \"Order\" (\"PK_Order\", \"PK_OrderStatus\", \"DateTime\", \"RegDateTime\", \"Sum\", \"Part\", \"PK_Driver\", \"PK_Client\", \"Address\", \"Countryside\", \"Comment\", \"PK_Dispatcher\")"
+                    + " values (" + PK +","
                          + TheOrder.Status + ","
                          + "to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
+                         + "to_date('" + (TheOrder.RegDateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
                          + "'" + TheOrder.Sum + "',"
                          + "'" + TheOrder.Part + "',";
                 if (TheOrder.PK_Driver > 0) cmdQuery += TheOrder.PK_Driver + ",";
                 else cmdQuery += "null,";
                 if (TheOrder.PK_Client > 0) cmdQuery += TheOrder.PK_Client + ",";
                 else cmdQuery += "null,";
-                cmdQuery += "'" + (TheOrder.Address.Replace("'", "\\'")) + "',"
+                cmdQuery += "'" + (TheOrder.Address.Replace("'", "`").Replace("\\","")) + "',"
                          + TheOrder.Countryside + ","
-                         + "'" + (TheOrder.Comment.Replace("'", "\\'")) + "')";
+                         + "'" + (TheOrder.Comment.Replace("'", "`").Replace("\\","")) + "'";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += ",'" + (DispatcherController.ActiveDispatcher.PK_Dispathcer) + "'";
+                else cmdQuery += ",null";
+                cmdQuery += ")";
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
                 cmd.CommandType = CommandType.Text;
@@ -221,6 +238,7 @@ namespace dostavka
             }
             public static void UpdateOrder(OracleConnection conn, Order TheOrder, bool UpdateLines)
             {
+                if (DispatcherController.AccessAllowed(conn, TheOrder) == false) return;
                 String cmdQuery = "update \"Order\" set ";
                 cmdQuery += "\"PK_OrderStatus\" = " + TheOrder.Status + ",";
                 if (TheOrder.DateTimeChangeAllowed()) cmdQuery += "\"DateTime\" = to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),";
@@ -235,10 +253,10 @@ namespace dostavka
                 else cmdQuery += "\"PK_Client\" = null,";
                 if (TheOrder.AddressChangeAllowed())
                 {
-                    cmdQuery += "\"Address\" = '" + (TheOrder.Address.Replace("'", "\\'")) + "',";
+                    cmdQuery += "\"Address\" = '" + (TheOrder.Address.Replace("'", "`").Replace("\\","")) + "',";
                     cmdQuery += "\"Countryside\" = " + TheOrder.Countryside + ",";
                 }
-                cmdQuery += "\"Comment\" = '" + (TheOrder.Comment.Replace("'", "\\'")) + "' "
+                cmdQuery += "\"Comment\" = '" + (TheOrder.Comment.Replace("'", "`").Replace("\\","")) + "' "
                          + "where \"PK_Order\" = " + TheOrder.PK_Order;
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);
@@ -257,6 +275,7 @@ namespace dostavka
             }
             public static void AddOrderLine(OracleConnection conn, Order TheOrder, OrderLine TheLine)
             {
+                if (DispatcherController.AccessAllowed(conn, TheOrder) == false) return;
                 if (!TheOrder.LinesChangeAllowed()) return;
                 String cmdQuery = "insert into \"OrderLine\" (\"PK_OrderLine\", \"PK_Order\", \"Amount\", \"Cost\", \"PK_Dish\")"
                          + " values (null,"
@@ -273,6 +292,7 @@ namespace dostavka
             }
             public static void DeleteOrderLine(OracleConnection conn, OrderLine TheLine)
             {
+                if (DispatcherController.AccessAllowed(conn, TheLine) == false) return;
                 if (TheLine.Order != null && !TheLine.Order.LinesChangeAllowed()) return;
                 String cmdQuery = "delete from \"OrderLine\" where \"PK_OrderLine\" = " + TheLine.PK_OrderLine;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
@@ -282,6 +302,7 @@ namespace dostavka
             }
             public static void DeleteOrderLines(OracleConnection conn, Order TheOrder)
             {
+                if (DispatcherController.AccessAllowed(conn, TheOrder) == false) return;
                 if (!TheOrder.LinesChangeAllowed()) return;
                 String cmdQuery = "delete from \"OrderLine\" where \"PK_Order\" = " + TheOrder.PK_Order;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
@@ -301,22 +322,22 @@ namespace dostavka
                 {
                     Sum += TheOrder.Lines[i].Cost;
                 }
-                if (TheOrder.Countryside != 0) Sum += CountryTariff;
-                else Sum += CityTariff;
 
                 return Sum;
             }
             public static float CountPart(float Sum, float Part)
             {
-                return Sum * Part;
+                return (float)((int)(Sum * Part + 0.5f));
             }
         }
         public class Dish
         {
             public int PK_Dish;
             public String Name;
+            public String Description;
             public float Price;
             public int PK_Cafe;
+            public bool Disabled;
 
             public Dish()
             {
@@ -324,11 +345,11 @@ namespace dostavka
                 Name = "";
                 Price = 0;
                 PK_Cafe = -1;
+                Disabled = false;
             }
-
             public static Dish FromPK(OracleConnection conn, int PK)
             {
-                String cmdQuery1 = "select \"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\" from \"Dish\" where \"PK_Dish\" = " + PK;
+                String cmdQuery1 = "select \"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\", \"Disabled\", \"Description\" from \"Dish\" where \"PK_Dish\" = " + PK;
 
                 OracleCommand cmd1 = new OracleCommand(cmdQuery1);
                 cmd1.Connection = conn;
@@ -341,14 +362,15 @@ namespace dostavka
                     if (!reader1.IsDBNull(1)) TheDish.Name = reader1.GetString(1);
                     if (!reader1.IsDBNull(2)) TheDish.Price = reader1.GetFloat(2);
                     if (!reader1.IsDBNull(3)) TheDish.PK_Cafe = reader1.GetInt32(3);
+                    if (!reader1.IsDBNull(4)) TheDish.Disabled = (reader1.GetInt32(4) != 0);
+                    if (!reader1.IsDBNull(5)) TheDish.Description = reader1.GetString(5);
 
                     return TheDish;
                 }
                 return null;
             }
-
             public static Dish FromName(OracleConnection conn, String Name, int PK_Cafe) {
-                String cmdQuery1 = "select \"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\" from \"Dish\" where \"Name\" = '" + Name.Replace("'","\\'") +"'";
+                String cmdQuery1 = "select \"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\", \"Disabled\", \"Description\" from \"Dish\" where \"Name\" = '" + Name.Replace("'","\\'") +"'";
                 if (PK_Cafe > 0) cmdQuery1 += " and \"PK_Cafe\" = "+PK_Cafe;
 
                 OracleCommand cmd1 = new OracleCommand(cmdQuery1);
@@ -362,12 +384,13 @@ namespace dostavka
                     if (!reader1.IsDBNull(1)) TheDish.Name = reader1.GetString(1);
                     if (!reader1.IsDBNull(2)) TheDish.Price = reader1.GetFloat(2);
                     if (!reader1.IsDBNull(3)) TheDish.PK_Cafe = reader1.GetInt32(3);
+                    if (!reader1.IsDBNull(4)) TheDish.Disabled = (reader1.GetInt32(4) != 0);
+                    if (!reader1.IsDBNull(5)) TheDish.Description = reader1.GetString(5);
 
                     return TheDish;
                 }
                 return null;
             }
-
             public override string ToString()
             {
                 return Name;
@@ -375,7 +398,7 @@ namespace dostavka
         }
         public class DishController
         {
-            public static List<Dish> GetDishList(OracleConnection conn)
+            public static List<Dish> GetDishList(OracleConnection conn, bool IncludeDisabled)
             {
                 String cmdQuery = "select \"PK_Dish\" from \"Dish\"";
 
@@ -389,12 +412,15 @@ namespace dostavka
                 while (reader.Read())
                 {
                     int PK_Dish = reader.GetInt32(0);
-                    Dishes.Add(Dish.FromPK(conn, PK_Dish));
+                    Dish TheDish = Dish.FromPK(conn, PK_Dish);
+                    if (!TheDish.Disabled || IncludeDisabled) Dishes.Add(TheDish);
                 }
                 return Dishes;
             }
-            public static List<Dish> GetDishList(OracleConnection conn, int PK_Cafe)
+            public static List<Dish> GetDishList(OracleConnection conn, int PK_Cafe, bool IncludeDisabled)
             {
+                if (PK_Cafe <= 0) return GetDishList(conn, IncludeDisabled);
+
                 String cmdQuery = "select \"PK_Dish\" from \"Dish\" where \"PK_Cafe\" = "+PK_Cafe;
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);
@@ -407,9 +433,88 @@ namespace dostavka
                 while (reader.Read())
                 {
                     int PK_Dish = reader.GetInt32(0);
-                    Dishes.Add(Dish.FromPK(conn, PK_Dish));
+                    Dish TheDish = Dish.FromPK(conn, PK_Dish);
+                    if (!TheDish.Disabled || IncludeDisabled) Dishes.Add(TheDish);
                 }
                 return Dishes;
+            }
+
+            public static bool DishInUse(OracleConnection conn, int PK_Dish) {
+                String cmdQuery = "select \"Order\".\"PK_Order\" from \"Order\", \"OrderLine\""+
+                    " where \"Order\".\"PK_Order\" = \"OrderLine\".\"PK_Order\" and \"Order\".\"PK_OrderStatus\" = 0 and \"OrderLine\".\"PK_Dish\" = " + PK_Dish;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                if (reader.Read()) return true;
+
+                return false;
+            }
+
+            public static void AddDish(OracleConnection conn, Dish TheDish)
+            {
+                String SEQ_Query = "select SEQ.NEXTVAL from dual";
+                OracleCommand SEQcmd = new OracleCommand(SEQ_Query);
+                SEQcmd.Connection = conn;
+                SEQcmd.CommandType = CommandType.Text;
+                OracleDataReader SEQreader = SEQcmd.ExecuteReader();
+                SEQreader.Read();
+                int PK = SEQreader.GetInt32(0);
+
+                TheDish.PK_Dish = PK;
+
+                String cmdQuery = "insert into \"Dish\" (\"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\",\"Disabled\")"
+                        + " values (" + PK + ",'"
+                        + (TheDish.Name.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheDish.Price.ToString()) + "','"
+                        + (TheDish.PK_Cafe) + "',";
+                if (!TheDish.Disabled) cmdQuery += "0)";
+                else cmdQuery += "1)";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void UpdateDish(OracleConnection conn, Dish TheDish)
+            {
+                String cmdQuery = "update \"Dish\" set " +
+                    "\"Name\" = '" + (TheDish.Name.Replace("'", "`").Replace("\\","")) + "'," +
+                    "\"Price\" = '" + (TheDish.Price.ToString()) + "',";
+                if (TheDish.Disabled) cmdQuery += "\"Disabled\" = 1,";
+                else cmdQuery += "\"Disabled\" = 0,";
+                if (TheDish.PK_Cafe > 0) cmdQuery += "\"PK_Cafe\" = '" + (TheDish.PK_Cafe) + "'";
+                else cmdQuery += "\"PK_Cafe\" = null";
+                cmdQuery += " where \"PK_Dish\" = " + TheDish.PK_Dish;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void DisableDish(OracleConnection conn, Dish TheDish)
+            {
+                DisableDish(conn, TheDish.PK_Dish);
+            }
+            public static void DisableDish(OracleConnection conn, int PK_Dish)
+            {
+                if (DishInUse(conn, PK_Dish)) return;
+                String cmdQuery = "update \"Dish\" set \"Disabled\" = 1 where \"PK_Dish\" = " + PK_Dish;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void EnableDish(OracleConnection conn, Dish TheDish)
+            {
+                EnableDish(conn, TheDish.PK_Dish);
+            }
+            public static void EnableDish(OracleConnection conn, int PK_Dish)
+            {
+                String cmdQuery = "update \"Dish\" set \"Disabled\" = 0 where \"PK_Dish\" = " + PK_Dish;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
             }
         }
         public class Driver
@@ -417,17 +522,20 @@ namespace dostavka
             public int PK_Driver;
             public String Name;
             public String Phone;
+            public int InState;
+
             public Driver()
             {
                 PK_Driver = -1;
                 Name = "";
                 Phone = "";
+                InState = 0;
             }
 
             public static Driver FromPK(OracleConnection conn, int PK)
             {
-                String cmdQuery1 = "select \"PK_Driver\", \"Name\", \"Phone\" from \"Driver\" where \"PK_Driver\" = " + PK;
-
+                String cmdQuery1 = "select \"PK_Driver\", \"Name\", \"Phone\", \"InState\" from \"Driver\" where \"PK_Driver\" = " + PK;
+                
                 OracleCommand cmd1 = new OracleCommand(cmdQuery1);
                 cmd1.Connection = conn;
                 cmd1.CommandType = CommandType.Text;
@@ -438,6 +546,7 @@ namespace dostavka
                     TheDriver.PK_Driver = reader1.GetInt32(0);
                     if (!reader1.IsDBNull(1)) TheDriver.Name = reader1.GetString(1);
                     if (!reader1.IsDBNull(2)) TheDriver.Phone = reader1.GetString(2);
+                    if (!reader1.IsDBNull(3)) TheDriver.InState = reader1.GetInt32(3);
 
                     return TheDriver;
                 }
@@ -452,7 +561,7 @@ namespace dostavka
         {
             public static List<Driver> GetDriversList(OracleConnection conn)
             {
-                String cmdQuery = "select \"PK_Driver\", \"Name\", \"Phone\" from \"Driver\"";
+                String cmdQuery = "select \"PK_Driver\" from \"Driver\"";
 
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -463,13 +572,44 @@ namespace dostavka
 
                 while (reader.Read())
                 {
-                    Driver TheDriver = new Driver();
-                    TheDriver.PK_Driver = reader.GetInt32(0);
-                    if (!reader.IsDBNull(1)) TheDriver.Name = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) TheDriver.Phone = reader.GetString(2);
+                    int PK_Driver = reader.GetInt32(0);
+                    Driver TheDriver = Driver.FromPK(conn, PK_Driver);
                     Drivers.Add(TheDriver);
                 }
                 return Drivers;
+            }
+            public static void AddDriver(OracleConnection conn, Driver TheDriver)
+            {
+                String SEQ_Query = "select SEQ.NEXTVAL from dual";
+                OracleCommand SEQcmd = new OracleCommand(SEQ_Query);
+                SEQcmd.Connection = conn;
+                SEQcmd.CommandType = CommandType.Text;
+                OracleDataReader SEQreader = SEQcmd.ExecuteReader();
+                SEQreader.Read();
+                int PK = SEQreader.GetInt32(0);
+
+                TheDriver.PK_Driver = PK;
+
+                String cmdQuery = "insert into \"Driver\" (\"PK_Driver\", \"Name\", \"Phone\", \"InState\")"
+                        + " values (" + PK + ",'"
+                        + (TheDriver.Name.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheDriver.Phone.Replace("'", "`").Replace("\\","")) + "',"
+                        + (TheDriver.InState) + ")";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void UpdateDriver(OracleConnection conn, Driver TheDriver) {
+                String cmdQuery = "update \"Driver\" set " +
+                        "\"Name\" = '" + (TheDriver.Name.Replace("'", "`").Replace("\\","")) + "'," +
+                        "\"Phone\" = '" + (TheDriver.Phone.Replace("'", "`").Replace("\\","")) + "'," +
+                        "\"InState\" = " + TheDriver.InState + " " +
+                        " where \"PK_Driver\" = " + TheDriver.PK_Driver;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
             }
         }
         public class Client
@@ -550,8 +690,8 @@ namespace dostavka
 
                 String cmdQuery = "insert into \"Client\" (\"PK_Client\", \"Name\", \"Phone\", \"Discount\")"
                         + " values ("+ PK +",'"
-                        + (TheClient.Name.Replace("'", "\\'")) + "','"
-                        + (TheClient.Phone.Replace("'", "\\'")) + "',"
+                        + (TheClient.Name.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheClient.Phone.Replace("'", "`").Replace("\\","")) + "',"
                         + "'" + TheClient.Discount + "')";
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -561,8 +701,8 @@ namespace dostavka
             public static void UpdateClient(OracleConnection conn, Client TheClient)
             {
                 String cmdQuery = "update \"Client\" set " +
-                        "\"Name\" = '" + (TheClient.Name.Replace("'", "\\'")) + "'," +
-                        "\"Phone\" = '" + (TheClient.Phone.Replace("'", "\\'")) + "'," +
+                        "\"Name\" = '" + (TheClient.Name.Replace("'", "`").Replace("\\","")) + "'," +
+                        "\"Phone\" = '" + (TheClient.Phone.Replace("'", "`").Replace("\\","")) + "'," +
                         "\"Discount\" = '" + TheClient.Discount + "'" +
                         " where \"PK_Client\" = " + TheClient.PK_Client;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
@@ -641,6 +781,369 @@ namespace dostavka
                     Cafes.Add(Cafe.FromPK(conn, PK_Cafe));
                 }
                 return Cafes;
+            }
+            public static void AddCafe(OracleConnection conn, Cafe TheCafe)
+            {
+                String SEQ_Query = "select SEQ.NEXTVAL from dual";
+                OracleCommand SEQcmd = new OracleCommand(SEQ_Query);
+                SEQcmd.Connection = conn;
+                SEQcmd.CommandType = CommandType.Text;
+                OracleDataReader SEQreader = SEQcmd.ExecuteReader();
+                SEQreader.Read();
+                int PK = SEQreader.GetInt32(0);
+
+                TheCafe.PK_Cafe = PK;
+
+                String cmdQuery = "insert into \"Cafe\" (\"PK_Cafe\", \"Name\", \"Address\", \"Phone\")"
+                        + " values (" + PK + ",'"
+                        + (TheCafe.Name.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheCafe.Address.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheCafe.Phone.Replace("'", "`").Replace("\\","")) + "')";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void UpdateCafe(OracleConnection conn, Cafe TheCafe) {
+                String cmdQuery = "update \"Cafe\" set " +
+                    "\"Name\" = '" + (TheCafe.Name.Replace("'", "`").Replace("\\","")) + "'," +
+                    "\"Address\" = '" + (TheCafe.Address.Replace("'", "`").Replace("\\","")) + "'," +
+                    "\"Phone\" = '" + (TheCafe.Phone.Replace("'", "`").Replace("\\","")) + "'" +
+                    " where \"PK_Cafe\" = " + TheCafe.PK_Cafe;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void UpdateCafeMenu(OracleConnection conn, Cafe TheCafe, List<Dish> Dishes) {
+                List<Dish> DishesToUpdate = new List<Dish>();
+                List<Dish> DishesToAdd = new List<Dish>();
+                for (int i = 0; i < Dishes.Count; i++) {
+                    if (Dishes[i].PK_Dish > 0) DishesToUpdate.Add(Dishes[i]);
+                    else DishesToAdd.Add(Dishes[i]);
+                }
+                for (int i = 0; i < DishesToUpdate.Count; i++)
+                {
+                    DishController.UpdateDish(conn, DishesToUpdate[i]);
+                }
+                for (int i = 0; i < DishesToAdd.Count; i++)
+                {
+                    DishController.AddDish(conn, DishesToAdd[i]);
+                }
+            }
+            public static void DisableDishes(OracleConnection conn, Cafe TheCafe) {
+                List<Dish> Dishes = DishController.GetDishList(conn, false);
+                for (int i = 0; i < Dishes.Count; i++) {
+                    DishController.DisableDish(conn, Dishes[i]);
+                }
+            }
+        }
+        public class Dispatcher {
+            public int PK_Dispathcer;
+            public String Name;
+            public String Login;
+            public String Password;
+            public int Banned;
+
+            public Dispatcher() {
+                PK_Dispathcer = -1;
+                Name = "";
+                Login = "";
+                Password = "";
+                Banned = 0;
+            }
+            public static Dispatcher FromPK(OracleConnection conn, int PK)
+            {
+                String cmdQuery = "select \"PK_Dispatcher\", \"Name\", \"Login\", \"Password\", \"Banned\" from \"Dispatcher\" where \"PK_Dispatcher\" = " + PK;
+
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    Dispatcher TheDispatcher = new Dispatcher();
+                    TheDispatcher.PK_Dispathcer = reader.GetInt32(0);
+                    if (!reader.IsDBNull(1)) TheDispatcher.Name = reader.GetString(1);
+                    if (!reader.IsDBNull(2)) TheDispatcher.Login = reader.GetString(2);
+                    if (!reader.IsDBNull(3)) TheDispatcher.Password = reader.GetString(3);
+                    if (!reader.IsDBNull(4)) TheDispatcher.Banned = reader.GetInt32(4); else TheDispatcher.Banned = 0;
+
+                    return TheDispatcher;
+                }
+                return null;
+            }
+            public static Dispatcher FromLogin(OracleConnection conn, String Login)
+            {
+                String cmdQuery = "select \"PK_Dispatcher\", \"Name\", \"Login\", \"Password\", \"Banned\" from \"Dispatcher\" where \"Login\" = '" + Login.Replace("'", "`").Replace("\\","")+"'";
+
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    Dispatcher TheDispatcher = new Dispatcher();
+                    TheDispatcher.PK_Dispathcer = reader.GetInt32(0);
+                    if (!reader.IsDBNull(1)) TheDispatcher.Name = reader.GetString(1);
+                    if (!reader.IsDBNull(2)) TheDispatcher.Login = reader.GetString(2);
+                    if (!reader.IsDBNull(3)) TheDispatcher.Password = reader.GetString(3);
+                    if (!reader.IsDBNull(4)) TheDispatcher.Banned = reader.GetInt32(4); else TheDispatcher.Banned = 0;
+
+                    return TheDispatcher;
+                }
+                return null;
+            }
+        }
+        public class DispatcherController {
+            public static Dispatcher ActiveDispatcher = null;
+            
+            public static List<Dispatcher> GetDispatcherList(OracleConnection conn)
+            {
+                String cmdQuery = "select \"PK_Dispatcher\" from \"Dispatcher\"";
+
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                List<Dispatcher> Dispatchers = new List<Dispatcher>();
+
+                while (reader.Read())
+                {
+                    int PK_Dispatcher = reader.GetInt32(0);
+                    Dispatcher TheDispatcher = Dispatcher.FromPK(conn, PK_Dispatcher);
+                    Dispatchers.Add(TheDispatcher);
+                }
+                return Dispatchers;
+            }
+
+            public static void LogIn(OracleConnection conn, String Login, String Password) {
+                Dispatcher TheDispatcher = Dispatcher.FromLogin(conn, Login);
+                if (TheDispatcher == null)
+                {
+                    ActiveDispatcher = null;
+                    return;
+                }
+                if (TheDispatcher.Banned != 0)
+                {
+                    ActiveDispatcher = null;
+                    return;
+                }
+                if (TheDispatcher.Password.Replace("\\", "").Replace("'", "").Equals(Password.Replace("\\", "").Replace("'", "")) == false)
+                {
+                    ActiveDispatcher = null;
+                    return;
+                }
+                ActiveDispatcher = TheDispatcher;
+            }
+            public static void LogOut(OracleConnection conn) {
+                ActiveDispatcher = null;
+            }
+
+            public static bool AccessAllowed(OracleConnection conn, Order TheOrder) {
+                if (ActiveDispatcher == null) return false;
+                String cmdQuery = "select \"PK_Order\" from \"Order\" where \"PK_Order\" = '" + TheOrder.PK_Order + "' and \"PK_Dispatcher\" = '" + ActiveDispatcher.PK_Dispathcer + "'";
+
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return true;
+                }
+                return false;
+            }
+            public static bool AccessAllowed(OracleConnection conn, OrderLine TheLine)
+            {
+                if (ActiveDispatcher == null) return false;
+                String cmdQuery = "select \"Order\".\"PK_Order\" from \"Order\", \"OrderLine\" where \"Order\".\"PK_Order\" = \"OrderLine\".\"PK_Order\" and \"OrderLine\".\"PK_OrderLine\" = '"+(TheLine.PK_OrderLine)+ "' and \"Order\".\"PK_Dispatcher\" = '" + ActiveDispatcher.PK_Dispathcer + "'";
+
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return true;
+                }
+                return false;
+            }
+
+            public static void AddDispatcher(OracleConnection conn, Dispatcher TheDispatcher)
+            {
+                String SEQ_Query = "select SEQ.NEXTVAL from dual";
+                OracleCommand SEQcmd = new OracleCommand(SEQ_Query);
+                SEQcmd.Connection = conn;
+                SEQcmd.CommandType = CommandType.Text;
+                OracleDataReader SEQreader = SEQcmd.ExecuteReader();
+                SEQreader.Read();
+                int PK = SEQreader.GetInt32(0);
+
+                TheDispatcher.PK_Dispathcer = PK;
+
+                String cmdQuery = "insert into \"Dispatcher\" (\"PK_Dispatcher\", \"Name\", \"Login\", \"Password\", \"Banned\")"
+                        + " values (" + PK + ",'"
+                        + (TheDispatcher.Name.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheDispatcher.Login.Replace("'", "`").Replace("\\","")) + "','"
+                        + (TheDispatcher.Password.Replace("'", "`").Replace("\\","")) + "',"
+                        + (TheDispatcher.Banned) + ")";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            public static void UpdateDispatcher(OracleConnection conn, Dispatcher TheDispatcher)
+            {
+                String cmdQuery = "update \"Dispatcher\" set " +
+                    "\"Name\" = '" + (TheDispatcher.Name.Replace("'", "`").Replace("\\","")) + "'," +
+                    "\"Login\" = '" + (TheDispatcher.Login.Replace("'", "`").Replace("\\","")) + "'," +
+                    "\"Password\" = '" + (TheDispatcher.Password.Replace("'", "`").Replace("\\","")) + "', " +
+                    "\"Banned\" = " + (TheDispatcher.Banned) +
+                    " where \"PK_Dispatcher\" = " + TheDispatcher.PK_Dispathcer;
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+        }
+        public class Statistics
+        {
+            public static int TotalOrders(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select count(*) from \"Order\" where \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy") + " 00:00") + "', 'dd-mm-yyyy hh24:mi') and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy") + " 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                reader.Read();
+                if (!reader.IsDBNull(0)) return reader.GetInt32(0);
+                return 0;
+            }
+            public static float AvgOrders(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                int PeriodLength = ((int)((end - beg).TotalDays)) + 1;
+                return (float)TotalOrders(conn, beg, end) / (float)PeriodLength;
+            }
+            public static float TotalProfit(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select sum(\"Sum\") from \"Order\" where \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy")+" 00:00") + "', 'dd-mm-yyyy hh24:mi') and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy") + " 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+                reader.Read();
+                if (!reader.IsDBNull(0)) return reader.GetFloat(0);
+                return 0;
+            }
+            public static float AvgProfit(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                int PeriodLength = ((int)((end - beg).TotalDays)) + 1;
+                return (float)TotalProfit(conn, beg, end) / (float)PeriodLength;
+            }
+
+            public static List<object[]> ByDish(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select \"OrderLine\".\"PK_Dish\", count(DISTINCT \"Order\".\"PK_Order\"), sum(\"OrderLine\".\"Cost\") from \"Order\", \"OrderLine\"" +
+                    " where \"Order\".\"PK_Order\" = \"OrderLine\".\"PK_Order\"" +
+                    " and \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy")+" 00:00") + "', 'dd-mm-yyyy hh24:mi')" +
+                    " and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy")+" 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                cmdQuery += " group by \"OrderLine\".\"PK_Dish\"";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                List<object[]> result = new List<object[]>();
+
+                while (reader.Read())
+                {
+                    object[] line = new object[3];
+                    if (!reader.IsDBNull(0)) line[0] = reader.GetInt32(0); else line[0] = null;
+                    if (!reader.IsDBNull(1)) line[1] = reader.GetInt32(1); else line[1] = null;
+                    if (!reader.IsDBNull(2)) line[2] = reader.GetFloat(2); else line[2] = null;
+                    result.Add(line);
+                }
+                return result;
+            }
+
+            public static List<object[]> ByCafe(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select \"Dish\".\"PK_Cafe\", count(DISTINCT \"Order\".\"PK_Order\"), sum(\"OrderLine\".\"Cost\") from \"Order\", \"OrderLine\", \"Dish\"" +
+                    " where \"Order\".\"PK_Order\" = \"OrderLine\".\"PK_Order\" and \"OrderLine\".\"PK_Dish\" = \"Dish\".\"PK_Dish\"" +
+                    " and \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy") + " 00:00") + "', 'dd-mm-yyyy hh24:mi')" +
+                    " and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy") + " 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                cmdQuery += " group by \"Dish\".\"PK_Cafe\"";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                List<object[]> result = new List<object[]>();
+
+                while (reader.Read())
+                {
+                    object[] line = new object[3];
+                    if (!reader.IsDBNull(0)) line[0] = reader.GetInt32(0); else line[0] = null;
+                    if (!reader.IsDBNull(1)) line[1] = reader.GetInt32(1); else line[1] = null;
+                    if (!reader.IsDBNull(2)) line[2] = reader.GetFloat(2); else line[2] = null;
+                    result.Add(line);
+                }
+                return result;
+            }
+
+            public static List<object[]> ByClient(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select \"Order\".\"PK_Client\", count(DISTINCT \"Order\".\"PK_Order\"), sum(\"Order\".\"Sum\") from \"Order\"" +
+                    " where \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy") + " 00:00") + "', 'dd-mm-yyyy hh24:mi')" +
+                    " and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy") + " 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                cmdQuery += " group by \"Order\".\"PK_Client\"";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                List<object[]> result = new List<object[]>();
+
+                while (reader.Read())
+                {
+                    object[] line = new object[3];
+                    if (!reader.IsDBNull(0)) line[0] = reader.GetInt32(0); else line[0] = null;
+                    if (!reader.IsDBNull(1)) line[1] = reader.GetInt32(1); else line[1] = null;
+                    if (!reader.IsDBNull(2)) line[2] = reader.GetFloat(2); else line[2] = null;
+                    result.Add(line);
+                }
+                return result;
+            }
+            public static List<object[]> ByDriver(OracleConnection conn, DateTime beg, DateTime end)
+            {
+                String cmdQuery = "select \"Order\".\"PK_Driver\", count(DISTINCT \"Order\".\"PK_Order\"), sum(\"Order\".\"Sum\") from \"Order\"" +
+                    " where \"Order\".\"DateTime\" >= to_date('" + (beg.ToString("dd-MM-yyyy") + " 00:00") + "', 'dd-mm-yyyy hh24:mi')" +
+                    " and \"Order\".\"DateTime\" <= to_date('" + (end.ToString("dd-MM-yyyy") + " 23:59") + "', 'dd-mm-yyyy hh24:mi')";
+                if (DispatcherController.ActiveDispatcher != null) cmdQuery += " and \"Order\".\"PK_Dispatcher\" = " + (DispatcherController.ActiveDispatcher.PK_Dispathcer);
+                cmdQuery += " group by \"Order\".\"PK_Driver\"";
+                OracleCommand cmd = new OracleCommand(cmdQuery);
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.Text;
+                OracleDataReader reader = cmd.ExecuteReader();
+
+                List<object[]> result = new List<object[]>();
+
+                while (reader.Read())
+                {
+                    object[] line = new object[3];
+                    if (!reader.IsDBNull(0)) line[0] = reader.GetInt32(0); else line[0] = null;
+                    if (!reader.IsDBNull(1)) line[1] = reader.GetInt32(1); else line[1] = null;
+                    if (!reader.IsDBNull(2)) line[2] = reader.GetFloat(2); else line[2] = null;
+                    result.Add(line);
+                }
+                return result;
             }
         }
     }

@@ -20,7 +20,7 @@ namespace dostavka
         int CityTariff = 100;
         int CountryTariff = 200;
 
-        float OurPart = 0.5f;
+        float OurPart = 0.05f;
 
         public Functionality.Order TheOrder;
 
@@ -46,6 +46,69 @@ namespace dostavka
         private void button7_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
+        }
+
+        void SetStatus(int Status) {
+            TheOrder.Status = Status;
+            switch (TheOrder.Status)
+            {
+                case 0:
+                    label_Status.Text = "Ожидание";
+                    button_Status1.Visible = true;
+                    button_Status2.Visible = true;
+                    button_Status3.Visible = false;
+                    break;
+                case 1:
+                    label_Status.Text = "Выполнение";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = true;
+                    break;
+                case 2:
+                    label_Status.Text = "Отменен";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = false;
+                    break;
+                case 3:
+                    label_Status.Text = "Завершен";
+                    button_Status1.Visible = false;
+                    button_Status2.Visible = false;
+                    button_Status3.Visible = false;
+                    break;
+            }
+            if (TheOrder.LinesChangeAllowed() == false)
+            {
+                dataGridView1.Enabled = false;
+                button_AddLine.Enabled = false;
+                button_RemoveLines.Enabled = false;
+            }
+            if (TheOrder.AddressChangeAllowed() == false)
+            {
+                textBox_Address.Enabled = false;
+                checkBox_Countryside.Enabled = false;
+            }
+            if (TheOrder.DateTimeChangeAllowed() == false)
+            {
+                dateTimePicker2.Enabled = false;
+            }
+            if (TheOrder.DriverChangeAllowed() == false)
+            {
+                comboBox_Driver.Enabled = false;
+            }
+            if (TheOrder.ClientChangeAllowed() == false)
+            {
+                comboBox_Client.Enabled = false;
+                button1.Enabled = false;
+            }
+            if (TheOrder.ClientChangeAllowed() == false) {
+                comboBox_Client.Enabled = false;
+                button1.Enabled = false;
+            }
+            if (TheOrder.DriverMoneyChangeAllowed() == false)
+            {
+                textBox_DriverMoney.Enabled = false;
+            }
         }
 
         void LoadClients() {
@@ -83,13 +146,12 @@ namespace dostavka
         }
 
         void LoadDishList(OracleConnection conn, int row, int PK_Cafe) {
+            bool IncludeDisabled = false;
+            if (!TheOrder.LinesChangeAllowed()) IncludeDisabled = true;
             DataGridViewComboBoxCell cbc = (DataGridViewComboBoxCell)dataGridView1.Rows[row].Cells["Column_Dish"];
             cbc.Value = null;
             cbc.Items.Clear();
-            if (PK_Cafe <= 0) return;
-            List<Functionality.Dish> Dishes;
-            if (PK_Cafe > 0) Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe);
-            else Dishes = Functionality.DishController.GetDishList(conn);
+            List<Functionality.Dish> Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
             for (int j = 0; j < Dishes.Count; j++)
             {
                 cbc.Items.Add(Dishes[j].Name);
@@ -98,8 +160,15 @@ namespace dostavka
 
         private void Form2_Load(object sender, EventArgs e)
         {
-            if (TheOrder.PK_Order > 0) label_PK.Text = TheOrder.PK_Order.ToString();
-            
+            if (TheOrder.PK_Order > 0)
+                            {
+                label_PK.Text = TheOrder.PK_Order.ToString();
+                dateTimePickerReg.Value = TheOrder.RegDateTime;
+                            }
+                        else {
+                TheOrder.RegDateTime = dateTimePickerReg.Value;
+                            }
+
             dateTimePicker2.Value = TheOrder.DateTime;
 
             label_Sum.Text = TheOrder.Sum.ToString();
@@ -110,6 +179,8 @@ namespace dostavka
             checkBox_Countryside.Checked = (TheOrder.Countryside != 0);
 
             textBox_Comment.Text = TheOrder.Comment;
+
+            SetStatus(TheOrder.Status);
 
             OracleConnection conn = new OracleConnection(ConnectionString);
             conn.Open();
@@ -181,18 +252,39 @@ namespace dostavka
 
         private void button_Status1_Click(object sender, EventArgs e)
         {
+            if (TheOrder.PK_Client <= 0) {
+                MessageBox.Show("Вы не выбрали клиента.");
+                return;
+            }
+            if (TheOrder.PK_Driver <= 0)
+            {
+                MessageBox.Show("Вы не выбрали водителя.");
+                return;
+            }
+            SetStatus(1);
         }
 
         private void button_Status2_Click(object sender, EventArgs e)
         {
+            SetStatus(2);
         }
 
         private void button_Status3_Click(object sender, EventArgs e)
         {
+            if (TheOrder.DriverMoney < TheOrder.Part)
+            {
+                MessageBox.Show("Деньги от водителя не получены.");
+                return;
+            }
+            SetStatus(3);
         }
 
         private void dataGridView1_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
         {
+            OracleConnection conn = new OracleConnection(ConnectionString);
+            conn.Open();
+            LoadDishList(conn, e.RowIndex, -1);
+            conn.Close();
         }
 
         private void comboBox_Client_SelectedIndexChanged(object sender, EventArgs e)
@@ -272,7 +364,14 @@ namespace dostavka
             TheOrder.Sum = Functionality.OrdersController.CountSum(TheOrder,CityTariff,CountryTariff)
                 * (float)(1 - 0.01 * Discount);
             TheOrder.Part = Functionality.OrdersController.CountPart(TheOrder.Sum, OurPart);
+
+            float S = TheOrder.Sum + TheOrder.Part;
+                        if (TheOrder.Countryside != 0) S += CountryTariff;
+                        else S += CityTariff;
+                        if (TheOrder.Countryside != 0) labelDostavka.Text = CountryTariff.ToString();
+                        else labelDostavka.Text = CityTariff.ToString();
             
+            labelClientMoney.Text = S.ToString();
 
             label_Sum.Text = TheOrder.Sum.ToString();
             label_Part.Text = TheOrder.Part.ToString();
@@ -314,9 +413,22 @@ namespace dostavka
                 case 2:
                     try
                     {
-                        TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
-                        TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
-                            TheCafe.PK_Cafe);
+                        TheCafe = null;
+                                                try
+                        {
+                            TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
+                                                    }
+                                                catch (System.Exception ee) { }
+                        
+                                                if (TheCafe != null)
+                                                    {
+                  TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),TheCafe.PK_Cafe);
+                                                    }
+                                                else {
+                            TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(), -1);
+                            TheCafe = Functionality.Cafe.FromPK(conn, TheDish.PK_Cafe);
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value = TheCafe.Name;
+                                                    }
                         TheLine.PK_Dish = TheDish.PK_Dish;
 
                         try
@@ -351,6 +463,12 @@ namespace dostavka
                     {
                         TheLine.Amount = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
 
+                        if (TheLine.Amount < 0)
+                                                    {
+                            TheLine.Amount *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value = TheLine.Amount.ToString();
+                                                    }
+
                         try
                         {
                             TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Price"].Value) * Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
@@ -370,6 +488,12 @@ namespace dostavka
                     try
                     {
                         TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value));
+
+                        if (TheLine.Cost < 0)
+                                                    {
+                            TheLine.Cost *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
+                                                    }
                     }
                     catch (System.Exception ee)
                     {
@@ -379,6 +503,11 @@ namespace dostavka
             }
             conn.Close();
             SumCount();
+        }
+
+        private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+
         }
     }
 }

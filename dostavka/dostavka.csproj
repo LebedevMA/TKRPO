@@ -48,6 +48,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DispatcherProfile.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DispatcherProfile.Designer.cs">
+      <DependentUpon>DispatcherProfile.cs</DependentUpon>
+    </Compile>
+    <Compile Include="dobavlenVodit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="dobavlenVodit.Designer.cs">
+      <DependentUpon>dobavlenVodit.cs</DependentUpon>
+    </Compile>
+    <Compile Include="drivers4.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="drivers4.Designer.cs">
+      <DependentUpon>drivers4.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -67,8 +85,47 @@
       <DependentUpon>Form3.cs</DependentUpon>
     </Compile>
     <Compile Include="Functionality.cs" />
+    <Compile Include="kafe.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="kafe.Designer.cs">
+      <DependentUpon>kafe.cs</DependentUpon>
+    </Compile>
+    <Compile Include="klients.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="klients.Designer.cs">
+      <DependentUpon>klients.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LoginForm.Designer.cs">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="redaktCafe.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="redaktCafe.Designer.cs">
+      <DependentUpon>redaktCafe.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Stat.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Stat.Designer.cs">
+      <DependentUpon>Stat.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="DispatcherProfile.resx">
+      <DependentUpon>DispatcherProfile.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="dobavlenVodit.resx">
+      <DependentUpon>dobavlenVodit.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="drivers4.resx">
+      <DependentUpon>drivers4.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -77,6 +134,15 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form3.resx">
       <DependentUpon>Form3.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="kafe.resx">
+      <DependentUpon>kafe.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="klients.resx">
+      <DependentUpon>klients.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -87,6 +153,12 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="redaktCafe.resx">
+      <DependentUpon>redaktCafe.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Stat.resx">
+      <DependentUpon>Stat.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
