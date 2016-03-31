@@ -107,17 +107,29 @@ namespace dostavka
             }
             public bool AddressChangeAllowed()
             {
+<<<<<<< HEAD
                 if (Status < 2) return true;
+=======
+                if (Status == 0 || Status == 1) return true;
+>>>>>>> origin/master
                 return false;
             }
             public bool DateTimeChangeAllowed()
             {
+<<<<<<< HEAD
                 if (Status < 2) return true;
+=======
+                if (Status == 0 || Status == 1) return true;
+>>>>>>> origin/master
                 return false;
             }
             public bool DriverChangeAllowed()
             {
+<<<<<<< HEAD
                 if (Status < 2) return true;
+=======
+                if (Status == 0 || Status == 1) return true;
+>>>>>>> origin/master
                 return false;
             }
             public bool ClientChangeAllowed() {
@@ -126,8 +138,15 @@ namespace dostavka
             }
             public bool DriverMoneyChangeAllowed()
             {
+<<<<<<< HEAD
                 if (Status == 1) return true;
                 return false;
+=======
+                if (Status == 0) return false;
+                if (Status == 2) return false;
+                if (Status == 3) return false;
+                return true;
+>>>>>>> origin/master
             }
         }
         public class OrderLine
@@ -190,7 +209,10 @@ namespace dostavka
                 {
                     int PK_Order = reader.GetInt32(0);
                     Order TheOrder = Order.FromPK(conn, PK_Order, true);
+<<<<<<< HEAD
                     if (DispatcherController.AccessAllowed(conn, TheOrder) == false) continue;
+=======
+>>>>>>> origin/master
                     Orders.Add(Order.FromPK(conn, PK_Order, true));
                 }
                 return Orders;
@@ -207,7 +229,11 @@ namespace dostavka
                 TheOrder.PK_Order = PK;
 
                 String cmdQuery = "insert into \"Order\" (\"PK_Order\", \"PK_OrderStatus\", \"DateTime\", \"RegDateTime\", \"Sum\", \"Part\", \"PK_Driver\", \"PK_Client\", \"Address\", \"Countryside\", \"Comment\", \"PK_Dispatcher\")"
+<<<<<<< HEAD
                     + " values (" + PK +","
+=======
+                         + " values ("+ PK +","
+>>>>>>> origin/master
                          + TheOrder.Status + ","
                          + "to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
                          + "to_date('" + (TheOrder.RegDateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),"
@@ -219,9 +245,14 @@ namespace dostavka
                 else cmdQuery += "null,";
                 cmdQuery += "'" + (TheOrder.Address.Replace("'", "`").Replace("\\","")) + "',"
                          + TheOrder.Countryside + ","
+<<<<<<< HEAD
                          + "'" + (TheOrder.Comment.Replace("'", "`").Replace("\\","")) + "'";
                 if (DispatcherController.ActiveDispatcher != null) cmdQuery += ",'" + (DispatcherController.ActiveDispatcher.PK_Dispathcer) + "'";
                 else cmdQuery += ",null";
+=======
+                         + "'" + (TheOrder.Comment.Replace("'", "\\'")) + "'";
+                cmdQuery += ",null";
+>>>>>>> origin/master
                 cmdQuery += ")";
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -242,6 +273,7 @@ namespace dostavka
                 String cmdQuery = "update \"Order\" set ";
                 cmdQuery += "\"PK_OrderStatus\" = " + TheOrder.Status + ",";
                 if (TheOrder.DateTimeChangeAllowed()) cmdQuery += "\"DateTime\" = to_date('" + (TheOrder.DateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),";
+                //cmdQuery += "\"RegDateTime\" = to_date('" + (TheOrder.RegDateTime.ToString("dd-MM-yyyy HH:mm")) + "', 'dd-mm-yyyy hh24:mi'),";
                 cmdQuery += "\"Sum\" = '" + TheOrder.Sum + "',";
                 cmdQuery += "\"Part\" = '" + TheOrder.Part + "',";
                 if (TheOrder.DriverChangeAllowed())
@@ -466,11 +498,18 @@ namespace dostavka
 
                 String cmdQuery = "insert into \"Dish\" (\"PK_Dish\", \"Name\", \"Price\", \"PK_Cafe\",\"Disabled\")"
                         + " values (" + PK + ",'"
+<<<<<<< HEAD
                         + (TheDish.Name.Replace("'", "`").Replace("\\","")) + "','"
                         + (TheDish.Price.ToString()) + "','"
                         + (TheDish.PK_Cafe) + "',";
                 if (!TheDish.Disabled) cmdQuery += "0)";
                 else cmdQuery += "1)";
+=======
+                        + (TheDish.Name.Replace("'", "\\'")) + "','"
+                        + (TheDish.Price.ToString()) + "','"
+                        + (TheDish.PK_Cafe) + "',"
+                        + "0)";
+>>>>>>> origin/master
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
                 cmd.CommandType = CommandType.Text;
@@ -479,7 +518,11 @@ namespace dostavka
             public static void UpdateDish(OracleConnection conn, Dish TheDish)
             {
                 String cmdQuery = "update \"Dish\" set " +
+<<<<<<< HEAD
                     "\"Name\" = '" + (TheDish.Name.Replace("'", "`").Replace("\\","")) + "'," +
+=======
+                    "\"Name\" = '" + (TheDish.Name.Replace("'", "\\'")) + "'," +
+>>>>>>> origin/master
                     "\"Price\" = '" + (TheDish.Price.ToString()) + "',";
                 if (TheDish.Disabled) cmdQuery += "\"Disabled\" = 1,";
                 else cmdQuery += "\"Disabled\" = 0,";
@@ -590,11 +633,18 @@ namespace dostavka
 
                 TheDriver.PK_Driver = PK;
 
+<<<<<<< HEAD
                 String cmdQuery = "insert into \"Driver\" (\"PK_Driver\", \"Name\", \"Phone\", \"InState\")"
                         + " values (" + PK + ",'"
                         + (TheDriver.Name.Replace("'", "`").Replace("\\","")) + "','"
                         + (TheDriver.Phone.Replace("'", "`").Replace("\\","")) + "',"
                         + (TheDriver.InState) + ")";
+=======
+                String cmdQuery = "insert into \"Driver\" (\"PK_Driver\", \"Name\", \"Phone\")"
+                        + " values (" + PK + ",'"
+                        + (TheDriver.Name.Replace("'", "\\'")) + "','"
+                        + (TheDriver.Phone.Replace("'", "\\'")) + "')";
+>>>>>>> origin/master
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
                 cmd.CommandType = CommandType.Text;
@@ -602,9 +652,14 @@ namespace dostavka
             }
             public static void UpdateDriver(OracleConnection conn, Driver TheDriver) {
                 String cmdQuery = "update \"Driver\" set " +
+<<<<<<< HEAD
                         "\"Name\" = '" + (TheDriver.Name.Replace("'", "`").Replace("\\","")) + "'," +
                         "\"Phone\" = '" + (TheDriver.Phone.Replace("'", "`").Replace("\\","")) + "'," +
                         "\"InState\" = " + TheDriver.InState + " " +
+=======
+                        "\"Name\" = '" + (TheDriver.Name.Replace("'", "\\'")) + "'," +
+                        "\"Phone\" = '" + (TheDriver.Phone.Replace("'", "\\'")) + "'," +
+>>>>>>> origin/master
                         " where \"PK_Driver\" = " + TheDriver.PK_Driver;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -796,9 +851,15 @@ namespace dostavka
 
                 String cmdQuery = "insert into \"Cafe\" (\"PK_Cafe\", \"Name\", \"Address\", \"Phone\")"
                         + " values (" + PK + ",'"
+<<<<<<< HEAD
                         + (TheCafe.Name.Replace("'", "`").Replace("\\","")) + "','"
                         + (TheCafe.Address.Replace("'", "`").Replace("\\","")) + "','"
                         + (TheCafe.Phone.Replace("'", "`").Replace("\\","")) + "')";
+=======
+                        + (TheCafe.Name.Replace("'", "\\'")) + "','"
+                        + (TheCafe.Address.Replace("'", "\\'")) + "','"
+                        + (TheCafe.Phone.Replace("'", "\\'")) + "')";
+>>>>>>> origin/master
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
                 cmd.CommandType = CommandType.Text;
@@ -806,9 +867,15 @@ namespace dostavka
             }
             public static void UpdateCafe(OracleConnection conn, Cafe TheCafe) {
                 String cmdQuery = "update \"Cafe\" set " +
+<<<<<<< HEAD
                     "\"Name\" = '" + (TheCafe.Name.Replace("'", "`").Replace("\\","")) + "'," +
                     "\"Address\" = '" + (TheCafe.Address.Replace("'", "`").Replace("\\","")) + "'," +
                     "\"Phone\" = '" + (TheCafe.Phone.Replace("'", "`").Replace("\\","")) + "'" +
+=======
+                    "\"Name\" = '" + (TheCafe.Name.Replace("'", "\\'")) + "'," +
+                    "\"Address\" = '" + (TheCafe.Address.Replace("'", "\\'")) + "'," +
+                    "\"Phone\" = '" + (TheCafe.Phone.Replace("'", "\\'")) + "'" +
+>>>>>>> origin/master
                     " where \"PK_Cafe\" = " + TheCafe.PK_Cafe;
                 OracleCommand cmd = new OracleCommand(cmdQuery);
                 cmd.Connection = conn;
@@ -818,6 +885,10 @@ namespace dostavka
             public static void UpdateCafeMenu(OracleConnection conn, Cafe TheCafe, List<Dish> Dishes) {
                 List<Dish> DishesToUpdate = new List<Dish>();
                 List<Dish> DishesToAdd = new List<Dish>();
+<<<<<<< HEAD
+=======
+                DisableDishes(conn, TheCafe);
+>>>>>>> origin/master
                 for (int i = 0; i < Dishes.Count; i++) {
                     if (Dishes[i].PK_Dish > 0) DishesToUpdate.Add(Dishes[i]);
                     else DishesToAdd.Add(Dishes[i]);
@@ -825,10 +896,19 @@ namespace dostavka
                 for (int i = 0; i < DishesToUpdate.Count; i++)
                 {
                     DishController.UpdateDish(conn, DishesToUpdate[i]);
+<<<<<<< HEAD
                 }
                 for (int i = 0; i < DishesToAdd.Count; i++)
                 {
                     DishController.AddDish(conn, DishesToAdd[i]);
+=======
+                    DishController.EnableDish(conn, DishesToUpdate[i]);
+                }
+                for (int i = 0; i < DishesToAdd.Count; i++)
+                {
+                    DishController.UpdateDish(conn, DishesToAdd[i]);
+                    DishController.EnableDish(conn, DishesToAdd[i]);
+>>>>>>> origin/master
                 }
             }
             public static void DisableDishes(OracleConnection conn, Cafe TheCafe) {
@@ -837,6 +917,7 @@ namespace dostavka
                     DishController.DisableDish(conn, Dishes[i]);
                 }
             }
+<<<<<<< HEAD
         }
         public class Dispatcher {
             public int PK_Dispathcer;
@@ -1145,6 +1226,8 @@ namespace dostavka
                 }
                 return result;
             }
+=======
+>>>>>>> origin/master
         }
     }
 }

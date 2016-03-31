@@ -151,7 +151,13 @@ namespace dostavka
             DataGridViewComboBoxCell cbc = (DataGridViewComboBoxCell)dataGridView1.Rows[row].Cells["Column_Dish"];
             cbc.Value = null;
             cbc.Items.Clear();
+<<<<<<< HEAD
             List<Functionality.Dish> Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
+=======
+            //if (PK_Cafe <= 0) return;
+            List<Functionality.Dish> Dishes;
+            Dishes = Functionality.DishController.GetDishList(conn, PK_Cafe, IncludeDisabled);
+>>>>>>> origin/master
             for (int j = 0; j < Dishes.Count; j++)
             {
                 cbc.Items.Add(Dishes[j].Name);
@@ -161,6 +167,7 @@ namespace dostavka
         private void Form2_Load(object sender, EventArgs e)
         {
             if (TheOrder.PK_Order > 0)
+<<<<<<< HEAD
                             {
                 label_PK.Text = TheOrder.PK_Order.ToString();
                 dateTimePickerReg.Value = TheOrder.RegDateTime;
@@ -169,6 +176,16 @@ namespace dostavka
                 TheOrder.RegDateTime = dateTimePickerReg.Value;
                             }
 
+=======
+            {
+                label_PK.Text = TheOrder.PK_Order.ToString();
+                dateTimePickerReg.Value = TheOrder.RegDateTime;
+            }
+            else {
+                TheOrder.RegDateTime = dateTimePickerReg.Value;
+            }
+            
+>>>>>>> origin/master
             dateTimePicker2.Value = TheOrder.DateTime;
 
             label_Sum.Text = TheOrder.Sum.ToString();
@@ -375,6 +392,14 @@ namespace dostavka
 
             label_Sum.Text = TheOrder.Sum.ToString();
             label_Part.Text = TheOrder.Part.ToString();
+
+            float S = TheOrder.Sum + TheOrder.Part;
+            if (TheOrder.Countryside != 0) S += CountryTariff;
+            else S += CityTariff;
+            if (TheOrder.Countryside != 0) labelDostavka.Text = CountryTariff.ToString();
+            else labelDostavka.Text = CityTariff.ToString();
+
+            labelClientMoney.Text = S.ToString();
         }
 
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -414,6 +439,7 @@ namespace dostavka
                     try
                     {
                         TheCafe = null;
+<<<<<<< HEAD
                                                 try
                         {
                             TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
@@ -429,6 +455,25 @@ namespace dostavka
                             TheCafe = Functionality.Cafe.FromPK(conn, TheDish.PK_Cafe);
                             dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value = TheCafe.Name;
                                                     }
+=======
+                        try
+                        {
+                            TheCafe = Functionality.Cafe.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value.ToString());
+                        }
+                        catch (System.Exception ee) { }
+                        
+                        if (TheCafe != null)
+                        {
+                            TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
+       TheCafe.PK_Cafe);
+                        }
+                        else {
+                            TheDish = Functionality.Dish.FromName(conn, dataGridView1.Rows[e.RowIndex].Cells["Column_Dish"].Value.ToString(),
+       -1);
+                            TheCafe = Functionality.Cafe.FromPK(conn, TheDish.PK_Cafe);
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cafe"].Value = TheCafe.Name;
+                        }
+>>>>>>> origin/master
                         TheLine.PK_Dish = TheDish.PK_Dish;
 
                         try
@@ -462,6 +507,7 @@ namespace dostavka
                     try
                     {
                         TheLine.Amount = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
+<<<<<<< HEAD
 
                         if (TheLine.Amount < 0)
                                                     {
@@ -469,9 +515,17 @@ namespace dostavka
                             dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value = TheLine.Amount.ToString();
                                                     }
 
+=======
+                        if (TheLine.Amount < 0)
+                        {
+                            TheLine.Amount *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value = TheLine.Amount.ToString();
+                        }
+>>>>>>> origin/master
                         try
                         {
                             TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Price"].Value) * Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Amount"].Value));
+                            if (TheLine.Cost < 0) TheLine.Cost *= -1;
                             dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
                         }
                         catch (System.Exception ee)
@@ -488,12 +542,20 @@ namespace dostavka
                     try
                     {
                         TheLine.Cost = (float)(Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value));
+<<<<<<< HEAD
 
                         if (TheLine.Cost < 0)
                                                     {
                             TheLine.Cost *= -1;
                             dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
                                                     }
+=======
+                        if (TheLine.Cost < 0)
+                        {
+                            TheLine.Cost *= -1;
+                            dataGridView1.Rows[e.RowIndex].Cells["Column_Cost"].Value = TheLine.Cost.ToString();
+                        }
+>>>>>>> origin/master
                     }
                     catch (System.Exception ee)
                     {

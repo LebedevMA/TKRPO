@@ -33,6 +33,7 @@ C:\Users\Admin\Desktop\dostavka_iter2\dostavka\obj\Debug\dostavka.csproj.Generat
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\bin\Debug\dostavka.exe
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\bin\Debug\dostavka.pdb
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\bin\Debug\Oracle.ManagedDataAccess.dll
+<<<<<<< HEAD
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\obj\Debug\dostavka.dobavlenVodit.resources
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\obj\Debug\dostavka.drivers4.resources
 C:\Users\Admin\Desktop\dostavka_iter2\dostavka\obj\Debug\dostavka.kafe.resources
@@ -44,3 +45,17 @@ C:\Users\Admin\Desktop\dostavka_iter2\dostavka\obj\Debug\dostavka.DispatcherProf
 I:\итерация 2\dostavka_iter2\dostavka\bin\Debug\dostavka.exe.config
 I:\итерация 2\dostavka_iter2\dostavka\obj\Debug\dostavka.exe
 I:\итерация 2\dostavka_iter2\dostavka\obj\Debug\dostavka.pdb
+=======
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\bin\Debug\dostavka.exe.config
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.exe
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.pdb
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.csprojResolveAssemblyReference.cache
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.Form1.resources
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.Form2.resources
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.Form3.resources
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.Properties.Resources.resources
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\obj\Debug\dostavka.csproj.GenerateResource.Cache
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\bin\Debug\dostavka.exe
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\bin\Debug\dostavka.pdb
+C:\Users\Admin\Desktop\dostavka_iter1\dostavka\bin\Debug\Oracle.ManagedDataAccess.dll
+>>>>>>> origin/master
